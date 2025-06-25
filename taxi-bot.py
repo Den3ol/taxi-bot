@@ -124,7 +124,7 @@ async def handle_price(message: Message):
 
 @dp.message(Command("contact"))
 async def handle_contact_cmd(message: Message):
-    await message.answer("📞 Диспетчер: +82 10-1234-5678\nВы также можете отправить заявку через бота.")
+    await message.answer("📞 Диспетчер: +82 10-4307-1105\nВы также можете отправить заявку через бота.")
 
 @dp.message(Command("info"))
 async def handle_info(message: Message):
