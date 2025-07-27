@@ -22,9 +22,9 @@ import os
 
 API_TOKEN = os.getenv("API_TOKEN")
 GROUP_ID = os.getenv("GROUP_ID")
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "cheongjutaxi")
 WEBHOOK_PATH = f"/webhook/{WEBHOOK_SECRET}"
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH
 
 # Логирование
 logging.basicConfig(level=logging.INFO)
@@ -124,8 +124,11 @@ async def lifespan(app: FastAPI):
         BotCommand(command="info", description="ℹ️ Информация о боте"),
     ])
     print("✅ Webhook установлен:", WEBHOOK_URL)
-    yield
-    await bot.delete_webhook()
+    try:
+        yield
+    finally:
+        await bot.delete_webhook()
+        await bot.session.close()
 
 # Приложение FastAPI с lifespan
 app = FastAPI(lifespan=lifespan)
