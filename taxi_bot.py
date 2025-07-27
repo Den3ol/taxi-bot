@@ -117,19 +117,18 @@ async def unknown(message: Message):
 # Lifespan вместо on_event
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await bot.set_webhook(WEBHOOK_URL)
-    await bot.set_my_commands([
-        BotCommand(command="start", description="🔄 Перезапустить бота"),
-        BotCommand(command="contact", description="📞 Диспетчер"),
-        BotCommand(command="info", description="ℹ️ Информация о боте"),
-    ])
-    print("✅ Webhook установлен:", WEBHOOK_URL)
-
     try:
+        await bot.set_webhook(WEBHOOK_URL)
+        await bot.set_my_commands([
+            BotCommand(command="start", description="🔄 Перезапустить бота"),
+            BotCommand(command="contact", description="📞 Диспетчер"),
+            BotCommand(command="info", description="ℹ️ Информация о боте"),
+        ])
+        print("✅ Webhook установлен:", WEBHOOK_URL)
         yield
     finally:
         await bot.delete_webhook(drop_pending_updates=True)
-        await bot.session.close()  # 🔧 критично: закрываем aiohttp-сессию
+        await bot.session.close()  # 🔧 Гарантируем закрытие сессии
 
 # Приложение FastAPI с lifespan
 app = FastAPI(lifespan=lifespan)
