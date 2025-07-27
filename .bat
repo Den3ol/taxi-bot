@@ -1,1 +1,1 @@
-start /min python taxi-bot.py
+start /min python taxi_bot.py
