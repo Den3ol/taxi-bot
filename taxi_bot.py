@@ -124,11 +124,12 @@ async def lifespan(app: FastAPI):
         BotCommand(command="info", description="ℹ️ Информация о боте"),
     ])
     print("✅ Webhook установлен:", WEBHOOK_URL)
+
     try:
         yield
     finally:
-        await bot.delete_webhook()
-        await bot.session.close()
+        await bot.delete_webhook(drop_pending_updates=True)
+        await bot.session.close()  # 🔧 критично: закрываем aiohttp-сессию
 
 # Приложение FastAPI с lifespan
 app = FastAPI(lifespan=lifespan)
