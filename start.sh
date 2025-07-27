@@ -1,1 +1,2 @@
-python3 taxi-bot.py
+#!/bin/bash
+python taxi-bot.py
