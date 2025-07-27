@@ -1,2 +1,2 @@
 #!/bin/bash
-python taxi-bot.py
+ echo worker: python taxi-bot.py > Procfile
