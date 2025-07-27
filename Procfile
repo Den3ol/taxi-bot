@@ -1,1 +1,2 @@
-worker: python taxi-bot.py
+web: python taxi-bot.py
+
