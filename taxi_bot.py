@@ -77,7 +77,7 @@ user_data = {}
 
 # 9. Handlers
 @router.message(CommandStart())
-async def cmd_start(message: Message):
+async def start_handler(message: Message):
     await message.answer(
         f"Здравствуйте, {message.from_user.full_name}!\nВыберите услугу:",
         reply_markup=menu
