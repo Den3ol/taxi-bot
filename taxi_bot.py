@@ -37,7 +37,8 @@ async def lifespan(app: FastAPI):
         BotCommand(command="contact", description="📞 Контакт"),
         BotCommand(command="info", description="ℹ️ Описание")
     ])
-    logging.info(f"✅ Webhook установлен: {WEBHOOK_URL}")
+    print("✅ Webhook установлен:", WEBHOOK_URL)
+
     yield
     await bot.delete_webhook(drop_pending_updates=True)
     await bot.session.close()
