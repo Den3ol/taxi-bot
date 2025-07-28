@@ -7,50 +7,44 @@ from contextlib import asynccontextmanager
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
-from aiogram.types import (
-    Message, ReplyKeyboardMarkup, KeyboardButton,
-    ReplyKeyboardRemove, BotCommand, Update
-)
+from aiogram.types import Message, BotCommand, Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.filters import CommandStart, Command
 
-# Загрузка переменных из .env
+# 1. Загрузка .env
 load_dotenv()
-
 API_TOKEN = os.getenv("API_TOKEN")
-GROUP_ID = os.getenv("GROUP_ID")
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "cheongjutaxi")
+GROUP_ID = int(os.getenv("GROUP_ID"))
+WEBHOOK_SECRET = os.getenv("cheongjutaxi")
 WEBHOOK_PATH = f"/webhook/{WEBHOOK_SECRET}"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-# Логирование
+# 2. Логирование
 logging.basicConfig(level=logging.INFO)
 
-# Инициализация бота и диспетчера
+# 3. Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 
-# Lifespan
+# 4. Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        await bot.set_webhook(WEBHOOK_URL)
-        await bot.set_my_commands([
-            BotCommand(command="start", description="🔄 Перезапустить бота"),
-            BotCommand(command="contact", description="📞 Диспетчер"),
-            BotCommand(command="info", description="ℹ️ Информация о боте"),
-        ])
-        print("✅ Webhook установлен:", WEBHOOK_URL)
-        yield
-    finally:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await bot.session.close()
+    await bot.set_webhook(WEBHOOK_URL)
+    await bot.set_my_commands([
+        BotCommand(command="start", description="🔄 Перезапуск"),
+        BotCommand(command="contact", description="📞 Контакт"),
+        BotCommand(command="info", description="ℹ️ Описание")
+    ])
+    print("✅ Webhook установлен:", WEBHOOK_URL)
+    yield
+    await bot.delete_webhook(drop_pending_updates=True)
+    await bot.session.close()
 
-# Инициализация FastAPI с lifespan
+# 5. Создание приложения
 app = FastAPI(lifespan=lifespan)
 
-# Webhook endpoint
+# 6. Обработка webhook
 @app.post(WEBHOOK_PATH)
 async def telegram_webhook(request: Request):
     body = await request.body()
@@ -58,7 +52,7 @@ async def telegram_webhook(request: Request):
     await dp.feed_update(bot, update)
     return Response(status_code=200)
 
-# Клавиатуры
+# 7. Клавиатуры
 menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Такси 🚕")],
     [KeyboardButton(text="Доставка 🙵")],
@@ -72,10 +66,10 @@ request_buttons = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="⬅️ Назад")]
 ], resize_keyboard=True, one_time_keyboard=True)
 
-# Хранилище данных пользователей
+# 8. Хранилище
 user_data = {}
 
-# Хендлеры
+# 9. Хендлеры
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
     await message.answer(
