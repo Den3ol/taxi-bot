@@ -5,14 +5,17 @@ from fastapi import FastAPI, Request
 from starlette.responses import Response
 from contextlib import asynccontextmanager
 
-from aiogram import Bot, Dispatcher, F
+from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums import ParseMode
-from aiogram.types import Message, BotCommand, Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import (
+    Message, BotCommand, Update,
+    ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+)
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.filters import CommandStart, Command
 
-# 1. Загрузка .env
+# 1. .env
 load_dotenv()
 API_TOKEN = os.getenv("API_TOKEN")
 GROUP_ID = int(os.getenv("GROUP_ID"))
@@ -20,13 +23,14 @@ WEBHOOK_SECRET = os.getenv("cheongjutaxi")
 WEBHOOK_PATH = f"/webhook/{WEBHOOK_SECRET}"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-# 2. Логирование
+# 2. Logging
 logging.basicConfig(level=logging.INFO)
 
-# 3. Инициализация бота и диспетчера
+# 3. Bot init
 bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
-
+router = Router()
+dp.include_router(router)
 
 # 4. Lifespan
 @asynccontextmanager
@@ -38,17 +42,14 @@ async def lifespan(app: FastAPI):
         BotCommand(command="info", description="ℹ️ Описание")
     ])
     print("✅ Webhook установлен:", WEBHOOK_URL)
-
     yield
     await bot.delete_webhook(drop_pending_updates=True)
     await bot.session.close()
 
-
-# 5. Приложение
+# 5. App
 app = FastAPI(lifespan=lifespan)
 
-
-# 6. Webhook-обработка
+# 6. Webhook
 @app.post(WEBHOOK_PATH)
 async def telegram_webhook(request: Request):
     body = await request.body()
@@ -57,8 +58,7 @@ async def telegram_webhook(request: Request):
     await dp.feed_update(bot, update)
     return Response(status_code=200)
 
-
-# 7. Клавиатуры
+# 7. Keyboards
 menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="Такси 🚕")],
     [KeyboardButton(text="Доставка 🙵")],
@@ -75,39 +75,33 @@ request_buttons = ReplyKeyboardMarkup(keyboard=[
 # 8. Хранилище
 user_data = {}
 
-
-# 9. Хендлеры
-@dp.message(CommandStart())
+# 9. Handlers
+@router.message(CommandStart())
 async def cmd_start(message: Message):
     await message.answer(
         f"Здравствуйте, {message.from_user.full_name}!\nВыберите услугу:",
         reply_markup=menu
     )
 
-
-@dp.message(F.text.in_({"Такси 🚕", "Доставка 🙵", "Трезвый водитель 😇", "Перегон автомобиля 🚗"}))
+@router.message(F.text.in_({"Такси 🚕", "Доставка 🙵", "Трезвый водитель 😇", "Перегон автомобиля 🚗"}))
 async def select_service(message: Message):
     user_data[message.from_user.id] = {"service": message.text}
     await message.answer("Пожалуйста, отправьте геолокацию и номер телефона:", reply_markup=request_buttons)
 
-
-@dp.message(F.text == "⬅️ Назад")
+@router.message(F.text == "⬅️ Назад")
 async def back_to_main(message: Message):
     user_data.pop(message.from_user.id, None)
     await message.answer("Вы вернулись в главное меню. Выберите услугу:", reply_markup=menu)
 
-
-@dp.message(F.location)
+@router.message(F.location)
 async def handle_location(message: Message):
     user_data.setdefault(message.from_user.id, {})["location"] = message.location
     await check_and_notify(message)
 
-
-@dp.message(F.contact)
+@router.message(F.contact)
 async def get_contact(message: Message):
     user_data.setdefault(message.from_user.id, {})["phone"] = message.contact.phone_number
     await check_and_notify(message)
-
 
 async def check_and_notify(message: Message):
     user_id = message.from_user.id
@@ -133,19 +127,16 @@ async def check_and_notify(message: Message):
                              reply_markup=ReplyKeyboardRemove())
         user_data.pop(user_id, None)
 
-
-@dp.message(Command("contact"))
+@router.message(Command("contact"))
 async def contact_info(message: Message):
     await message.answer("📞 Диспетчер: +82 10-4307-1105", reply_markup=menu)
 
-
-@dp.message(Command("info"))
+@router.message(Command("info"))
 async def info(message: Message):
     await message.answer(
         "🚖 Taxi Cheongju — круглосуточная служба заказа такси, доставки и трезвого водителя в городе Чхонджу.",
         reply_markup=menu)
 
-
-@dp.message()
+@router.message()
 async def unknown(message: Message):
     await message.answer("Пожалуйста, выберите команду из меню:", reply_markup=menu)
