@@ -45,11 +45,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # 6. Обработка webhook
-@app.post(WEBHOOK_PATH)
+@app.api_route(WEBHOOK_PATH, methods=["GET", "POST", "HEAD"])
 async def telegram_webhook(request: Request):
-    body = await request.body()
-    update = Update.model_validate_json(body.decode())
-    await dp.feed_update(bot, update)
+    print(f"📥 Webhook Triggered: {request.method}")
+    if request.method == "POST":
+        body = await request.body()
+        data = json.loads(body.decode())
+        update = Update.model_validate(data)
+        await dp.feed_update(bot, update)
     return Response(status_code=200)
 
 # 7. Клавиатуры
