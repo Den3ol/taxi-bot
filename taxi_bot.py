@@ -22,9 +22,16 @@ import os
 
 API_TOKEN = os.getenv("API_TOKEN")
 GROUP_ID = os.getenv("GROUP_ID")
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "cheongjutaxi")
-WEBHOOK_PATH = f"/webhook/{WEBHOOK_SECRET}"
-WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH
+WEBHOOK_SECRET = os.getenv("cheongjutaxi")
+WEBHOOK_PATH = f"/webhook/{cheongjutaxi}"
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+
+app = FastAPI(lifespan=lifespan)
+
+@app.post(WEBHOOK_PATH)
+async def telegram_webhook(request: Request):
+    print("✅ Пришёл запрос от Telegram!")
+    return Response(status_code=200)
 
 # Логирование
 logging.basicConfig(level=logging.INFO)
@@ -130,10 +137,10 @@ async def lifespan(app: FastAPI):
         await bot.delete_webhook(drop_pending_updates=True)
         await bot.session.close()  # 🔧 Гарантируем закрытие сессии
 
-# Приложение FastAPI с lifespan
+# Инициализация приложения
 app = FastAPI(lifespan=lifespan)
 
-# Webhook
+# Webhook — после объявления app
 @app.post(WEBHOOK_PATH)
 async def telegram_webhook(request: Request):
     body = await request.body()
